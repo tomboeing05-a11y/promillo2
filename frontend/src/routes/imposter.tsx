@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { HomeButton } from "@/components/HomeButton";
 import { ImposterGame } from "@/components/ImposterGame";
 import { ImposterOnline } from "@/components/ImposterOnline";
@@ -7,7 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Smartphone, Wifi } from "lucide-react";
 import { GameTitle, GameTitleInline } from "@/components/GameTitle";
 
+type ImposterSearch = { code?: string };
+
 export const Route = createFileRoute("/imposter")({
+  validateSearch: (search: Record<string, unknown>): ImposterSearch => ({
+    code: typeof search.code === "string" ? search.code.toUpperCase().slice(0, 4) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Imposter – Trinkspiel" },
@@ -20,7 +25,13 @@ export const Route = createFileRoute("/imposter")({
 type Mode = "choose" | "local" | "online";
 
 function ImposterPage() {
-  const [mode, setMode] = useState<Mode>("choose");
+  const search = useSearch({ from: "/imposter" }) as ImposterSearch;
+  const [mode, setMode] = useState<Mode>(search.code ? "online" : "choose");
+
+  useEffect(() => {
+    if (search.code && mode === "choose") setMode("online");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.code]);
 
   return (
     <main className="min-h-screen flex flex-col items-center p-4 md:p-8">
@@ -38,6 +49,7 @@ function ImposterPage() {
           <div className="grid gap-3">
             <button
               onClick={() => setMode("local")}
+              data-testid="imposter-mode-local-btn"
               className="group relative overflow-hidden rounded-lg border border-border bg-card/80 backdrop-blur p-6 text-left hover:border-primary transition"
             >
               <Smartphone className="w-8 h-8 text-primary mb-2" />
@@ -48,6 +60,7 @@ function ImposterPage() {
             </button>
             <button
               onClick={() => setMode("online")}
+              data-testid="imposter-mode-online-btn"
               className="group relative overflow-hidden rounded-lg border border-border bg-card/80 backdrop-blur p-6 text-left hover:border-accent transition"
             >
               <Wifi className="w-8 h-8 text-accent mb-2" />
@@ -68,7 +81,9 @@ function ImposterPage() {
           </div>
         )}
 
-        {mode === "online" && <ImposterOnline onExit={() => setMode("choose")} />}
+        {mode === "online" && (
+          <ImposterOnline onExit={() => setMode("choose")} initialCode={search.code} />
+        )}
       </div>
     </main>
   );

@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { HomeButton } from "@/components/HomeButton";
 import { PokerRunout } from "@/components/PokerRunout";
 import { PokerPlayer } from "@/components/PokerPlayer";
@@ -7,7 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Monitor, Smartphone } from "lucide-react";
 import { GameTitle, GameTitleInline } from "@/components/GameTitle";
 
+type PokerSearch = { code?: string };
+
 export const Route = createFileRoute("/poker")({
+  validateSearch: (search: Record<string, unknown>): PokerSearch => ({
+    code: typeof search.code === "string" ? search.code.toUpperCase().slice(0, 4) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Poker – Spielhelfer" },
@@ -20,7 +25,14 @@ export const Route = createFileRoute("/poker")({
 type Mode = "choose" | "runout" | "player";
 
 function PokerPage() {
-  const [mode, setMode] = useState<Mode>("choose");
+  const search = useSearch({ from: "/poker" }) as PokerSearch;
+  // If user arrives with ?code=XXXX (shared lobby), jump directly into player join flow
+  const [mode, setMode] = useState<Mode>(search.code ? "player" : "choose");
+
+  useEffect(() => {
+    if (search.code && mode === "choose") setMode("player");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.code]);
 
   return (
     <main className="min-h-screen flex flex-col items-center p-4 md:p-8">
@@ -38,6 +50,7 @@ function PokerPage() {
           <div className="grid gap-3 max-w-md mx-auto">
             <button
               onClick={() => setMode("runout")}
+              data-testid="poker-mode-runout-btn"
               className="group relative overflow-hidden rounded-lg border border-border bg-card/80 backdrop-blur p-6 text-left hover:border-primary transition"
             >
               <Monitor className="w-8 h-8 text-primary mb-2" />
@@ -48,6 +61,7 @@ function PokerPage() {
             </button>
             <button
               onClick={() => setMode("player")}
+              data-testid="poker-mode-player-btn"
               className="group relative overflow-hidden rounded-lg border border-border bg-card/80 backdrop-blur p-6 text-left hover:border-accent transition"
             >
               <Smartphone className="w-8 h-8 text-accent mb-2" />
@@ -70,7 +84,7 @@ function PokerPage() {
 
         {mode === "player" && (
           <div className="max-w-md mx-auto">
-            <PokerPlayer onExit={() => setMode("choose")} />
+            <PokerPlayer onExit={() => setMode("choose")} initialCode={search.code} />
           </div>
         )}
       </div>

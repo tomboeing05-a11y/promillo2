@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { PlayingCard } from "@/components/PlayingCard";
+import { ShareLobbyDialog } from "@/components/ShareLobbyDialog";
 import { Card as PCard, freshDeck } from "@/lib/poker-cards";
 import {
   Coins,
@@ -18,6 +19,7 @@ import {
   Minimize2,
   Play,
   RotateCw,
+  Share2,
   Shuffle,
   Trophy,
   Users,
@@ -67,6 +69,7 @@ export function PokerRunout({ onExit }: { onExit: () => void }) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [showdownReveal, setShowdownReveal] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const tableRef = useRef<HTMLDivElement>(null);
 
   const seated = useMemo(
@@ -140,11 +143,26 @@ export function PokerRunout({ onExit }: { onExit: () => void }) {
 
   async function updateLobby(patch: Partial<Lobby>) {
     if (!lobby) return;
-    await supabase.from("poker_lobbies").update(patch as never).eq("id", lobby.id);
+    // Optimistic local update — realtime may be flaky / disabled on the project.
+    setLobby((prev) => (prev ? { ...prev, ...patch } : prev));
+    const { error } = await supabase.from("poker_lobbies").update(patch as never).eq("id", lobby.id);
+    if (error) {
+      toast.error("Konnte Einstellung nicht speichern");
+      // rollback by re-fetching authoritative state
+      void reloadAll(lobby.id);
+    }
   }
 
   async function assignSeat(playerId: string, seat: number) {
-    // Free up seat if taken
+    // Optimistic local update
+    setPlayers((prev) => {
+      const taken = prev.find((p) => p.seat === seat && p.id !== playerId);
+      return prev.map((p) => {
+        if (taken && p.id === taken.id) return { ...p, seat: 0 };
+        if (p.id === playerId) return { ...p, seat };
+        return p;
+      });
+    });
     const taken = players.find((p) => p.seat === seat && p.id !== playerId);
     if (taken) {
       await supabase.from("poker_players").update({ seat: 0 }).eq("id", taken.id);
@@ -153,6 +171,7 @@ export function PokerRunout({ onExit }: { onExit: () => void }) {
   }
 
   async function kickPlayer(playerId: string) {
+    setPlayers((prev) => prev.filter((p) => p.id !== playerId));
     await supabase.from("poker_players").delete().eq("id", playerId);
   }
 
@@ -320,6 +339,16 @@ export function PokerRunout({ onExit }: { onExit: () => void }) {
             <Users className="w-3 h-3" /> {players.length}
           </Badge>
           {lobby.hand_number > 0 && <Badge variant="outline">Hand #{lobby.hand_number}</Badge>}
+          <Button
+            onClick={() => setShareOpen(true)}
+            size="sm"
+            variant="secondary"
+            className="gap-1"
+            data-testid="poker-share-btn"
+            title="Lobby teilen"
+          >
+            <Share2 className="w-4 h-4" /> Teilen
+          </Button>
           <Button onClick={toggleFullscreen} size="sm" variant="ghost" className="gap-1" title="Vollbild">
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </Button>
@@ -328,6 +357,14 @@ export function PokerRunout({ onExit }: { onExit: () => void }) {
           </Button>
         </div>
       </UICard>
+
+      <ShareLobbyDialog
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        code={lobby.code}
+        joinPath="/poker"
+        gameLabel="Poker"
+      />
 
 
       {/* Settings (lobby phase) */}
@@ -341,7 +378,11 @@ export function PokerRunout({ onExit }: { onExit: () => void }) {
                 {lobby.use_chips ? "Virtuelle Chips & Pot" : "Nur Karten – Chips real am Tisch"}
               </p>
             </div>
-            <Switch checked={lobby.use_chips} onCheckedChange={(v) => updateLobby({ use_chips: v })} />
+            <Switch
+              checked={lobby.use_chips}
+              onCheckedChange={(v) => updateLobby({ use_chips: v })}
+              data-testid="poker-use-chips-switch"
+            />
           </div>
           {lobby.use_chips && (
             <div className="grid grid-cols-3 gap-2">

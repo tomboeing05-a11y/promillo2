@@ -41,10 +41,10 @@ function storageKey(code: string) {
   return `poker_lobby_${code.toUpperCase()}_pid`;
 }
 
-export function PokerPlayer({ onExit }: { onExit: () => void }) {
+export function PokerPlayer({ onExit, initialCode }: { onExit: () => void; initialCode?: string }) {
   const [view, setView] = useState<"join" | "table">("join");
   const [name, setName] = useState("");
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(initialCode ?? "");
   const [busy, setBusy] = useState(false);
 
   const [lobby, setLobby] = useState<Lobby | null>(null);

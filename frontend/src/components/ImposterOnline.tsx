@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { ShareLobbyDialog } from "@/components/ShareLobbyDialog";
 import {
   IMPOSTER_CATEGORIES,
   IMPOSTER_WORDS,
@@ -19,6 +20,7 @@ import {
   LogOut,
   Play,
   RotateCw,
+  Share2,
   Shuffle,
   Skull,
   Users,
@@ -61,16 +63,19 @@ function storageKey(code: string) {
   return `imposter_lobby_${code.toUpperCase()}_pid`;
 }
 
-export function ImposterOnline({ onExit }: { onExit: () => void }) {
-  const [view, setView] = useState<"menu" | "create" | "join" | "lobby">("menu");
+export function ImposterOnline({ onExit, initialCode }: { onExit: () => void; initialCode?: string }) {
+  const [view, setView] = useState<"menu" | "create" | "join" | "lobby">(
+    initialCode ? "join" : "menu",
+  );
   const [name, setName] = useState("");
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(initialCode ?? "");
   const [busy, setBusy] = useState(false);
 
   const [lobby, setLobby] = useState<Lobby | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [myId, setMyId] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const me = useMemo(() => players.find((p) => p.id === myId) ?? null, [players, myId]);
   const isHost = lobby?.host_player_id === myId;
@@ -390,10 +395,30 @@ export function ImposterOnline({ onExit }: { onExit: () => void }) {
           <span className="font-display tracking-[0.4em] text-2xl">{lobby.code}</span>
           <Copy className="w-3 h-3 opacity-60" />
         </button>
-        <Button onClick={leaveLobby} size="sm" variant="ghost" className="gap-1">
-          <LogOut className="w-4 h-4" /> Verlassen
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setShareOpen(true)}
+            size="sm"
+            variant="secondary"
+            className="gap-1"
+            data-testid="imposter-share-btn"
+            title="Lobby teilen"
+          >
+            <Share2 className="w-4 h-4" /> Teilen
+          </Button>
+          <Button onClick={leaveLobby} size="sm" variant="ghost" className="gap-1">
+            <LogOut className="w-4 h-4" /> Verlassen
+          </Button>
+        </div>
       </Card>
+
+      <ShareLobbyDialog
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        code={lobby.code}
+        joinPath="/imposter"
+        gameLabel="Imposter"
+      />
 
       {/* Players */}
       <Card className="p-4 bg-card/80 backdrop-blur">
