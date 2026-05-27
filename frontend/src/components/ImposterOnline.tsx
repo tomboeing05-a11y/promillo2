@@ -228,12 +228,29 @@ export function ImposterOnline({ onExit, initialCode }: { onExit: () => void; in
     const next = lobby.categories.includes(catId)
       ? lobby.categories.filter((c) => c !== catId)
       : [...lobby.categories, catId];
-    await supabase.from("imposter_lobbies").update({ categories: next }).eq("id", lobby.id);
+    // Optimistic update — realtime may be inactive on the project
+    setLobby((prev) => (prev ? { ...prev, categories: next } : prev));
+    const { error } = await supabase
+      .from("imposter_lobbies")
+      .update({ categories: next })
+      .eq("id", lobby.id);
+    if (error) {
+      toast.error("Konnte Kategorien nicht speichern");
+      void reloadAll(lobby.id);
+    }
   }
 
   async function toggleHint(v: boolean) {
     if (!lobby || !isHost) return;
-    await supabase.from("imposter_lobbies").update({ hint_enabled: v }).eq("id", lobby.id);
+    setLobby((prev) => (prev ? { ...prev, hint_enabled: v } : prev));
+    const { error } = await supabase
+      .from("imposter_lobbies")
+      .update({ hint_enabled: v })
+      .eq("id", lobby.id);
+    if (error) {
+      toast.error("Konnte Tipp-Einstellung nicht speichern");
+      void reloadAll(lobby.id);
+    }
   }
 
   async function startRound() {
@@ -254,35 +271,55 @@ export function ImposterOnline({ onExit, initialCode }: { onExit: () => void; in
     const [word, hint] = pool[Math.floor(Math.random() * pool.length)];
     const imp = players[Math.floor(Math.random() * players.length)];
     const starter = players[Math.floor(Math.random() * players.length)];
-    await supabase
+    const patch = {
+      status: "reveal" as Status,
+      word,
+      hint,
+      imposter_player_id: imp.id,
+      starter_player_id: starter.id,
+    };
+    setLobby((prev) => (prev ? { ...prev, ...patch } : prev));
+    const { error } = await supabase
       .from("imposter_lobbies")
-      .update({
-        status: "reveal",
-        word,
-        hint,
-        imposter_player_id: imp.id,
-        starter_player_id: starter.id,
-      })
+      .update(patch)
       .eq("id", lobby.id);
+    if (error) {
+      toast.error("Konnte Runde nicht starten");
+      void reloadAll(lobby.id);
+    }
   }
 
   async function setStatus(s: Status) {
     if (!lobby || !isHost) return;
-    await supabase.from("imposter_lobbies").update({ status: s }).eq("id", lobby.id);
+    setLobby((prev) => (prev ? { ...prev, status: s } : prev));
+    const { error } = await supabase
+      .from("imposter_lobbies")
+      .update({ status: s })
+      .eq("id", lobby.id);
+    if (error) {
+      toast.error("Konnte Status nicht ändern");
+      void reloadAll(lobby.id);
+    }
   }
 
   async function nextRound() {
     if (!lobby || !isHost) return;
-    await supabase
+    const patch = {
+      status: "waiting" as Status,
+      word: null,
+      hint: null,
+      imposter_player_id: null,
+      starter_player_id: null,
+    };
+    setLobby((prev) => (prev ? { ...prev, ...patch } : prev));
+    const { error } = await supabase
       .from("imposter_lobbies")
-      .update({
-        status: "waiting",
-        word: null,
-        hint: null,
-        imposter_player_id: null,
-        starter_player_id: null,
-      })
+      .update(patch)
       .eq("id", lobby.id);
+    if (error) {
+      toast.error("Konnte nächste Runde nicht starten");
+      void reloadAll(lobby.id);
+    }
   }
 
   function copyCode() {
@@ -449,6 +486,8 @@ export function ImposterOnline({ onExit, initialCode }: { onExit: () => void; in
                     key={c.id}
                     disabled={!isHost}
                     onClick={() => updateCategory(c.id)}
+                    data-testid={`imposter-cat-${c.id}`}
+                    data-active={active}
                     className={`p-2 rounded-md border text-sm text-left transition ${
                       active
                         ? "border-primary bg-primary/15"
@@ -467,7 +506,12 @@ export function ImposterOnline({ onExit, initialCode }: { onExit: () => void; in
               <Label className="text-base">Imposter bekommt Tipp</Label>
               <p className="text-xs text-muted-foreground">Ober-Kategorie statt nichts</p>
             </div>
-            <Switch checked={lobby.hint_enabled} onCheckedChange={toggleHint} disabled={!isHost} />
+            <Switch
+              checked={lobby.hint_enabled}
+              onCheckedChange={toggleHint}
+              disabled={!isHost}
+              data-testid="imposter-hint-switch"
+            />
           </div>
 
           {isHost ? (
