@@ -14,6 +14,7 @@ import { Route as PokerRouteImport } from './routes/poker'
 import { Route as PiciniRouteImport } from './routes/picini'
 import { Route as NacheinanderRouteImport } from './routes/nacheinander'
 import { Route as ImposterRouteImport } from './routes/imposter'
+import { Route as Fragen99RouteImport } from './routes/fragen99'
 import { Route as DuemmsterRouteImport } from './routes/duemmster'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -42,6 +43,11 @@ const ImposterRoute = ImposterRouteImport.update({
   path: '/imposter',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Fragen99Route = Fragen99RouteImport.update({
+  id: '/fragen99',
+  path: '/fragen99',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DuemmsterRoute = DuemmsterRouteImport.update({
   id: '/duemmster',
   path: '/duemmster',
@@ -56,6 +62,7 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/duemmster': typeof DuemmsterRoute
+  '/fragen99': typeof Fragen99Route
   '/imposter': typeof ImposterRoute
   '/nacheinander': typeof NacheinanderRoute
   '/picini': typeof PiciniRoute
@@ -65,6 +72,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/duemmster': typeof DuemmsterRoute
+  '/fragen99': typeof Fragen99Route
   '/imposter': typeof ImposterRoute
   '/nacheinander': typeof NacheinanderRoute
   '/picini': typeof PiciniRoute
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/duemmster': typeof DuemmsterRoute
+  '/fragen99': typeof Fragen99Route
   '/imposter': typeof ImposterRoute
   '/nacheinander': typeof NacheinanderRoute
   '/picini': typeof PiciniRoute
@@ -86,6 +95,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/duemmster'
+    | '/fragen99'
     | '/imposter'
     | '/nacheinander'
     | '/picini'
@@ -95,6 +105,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/duemmster'
+    | '/fragen99'
     | '/imposter'
     | '/nacheinander'
     | '/picini'
@@ -104,6 +115,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/duemmster'
+    | '/fragen99'
     | '/imposter'
     | '/nacheinander'
     | '/picini'
@@ -114,6 +126,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DuemmsterRoute: typeof DuemmsterRoute
+  Fragen99Route: typeof Fragen99Route
   ImposterRoute: typeof ImposterRoute
   NacheinanderRoute: typeof NacheinanderRoute
   PiciniRoute: typeof PiciniRoute
@@ -158,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ImposterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/fragen99': {
+      id: '/fragen99'
+      path: '/fragen99'
+      fullPath: '/fragen99'
+      preLoaderRoute: typeof Fragen99RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/duemmster': {
       id: '/duemmster'
       path: '/duemmster'
@@ -178,6 +198,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DuemmsterRoute: DuemmsterRoute,
+  Fragen99Route: Fragen99Route,
   ImposterRoute: ImposterRoute,
   NacheinanderRoute: NacheinanderRoute,
   PiciniRoute: PiciniRoute,

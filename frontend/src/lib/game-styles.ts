@@ -1,5 +1,12 @@
 // Pro Spiel: eigene knallige Schrift + Farbe
-export type GameKey = "quiz" | "imposter" | "nacheinander" | "picili" | "poker" | "duemmster";
+export type GameKey =
+  | "quiz"
+  | "imposter"
+  | "nacheinander"
+  | "picili"
+  | "poker"
+  | "duemmster"
+  | "fragen99";
 
 export interface GameStyle {
   title: string;
@@ -58,5 +65,13 @@ export const GAME_STYLES: Record<GameKey, GameStyle> = {
     shadow: "#6A1400",
     gradient: "linear-gradient(180deg, #FFD27A 0%, #FF6B35 55%, #C71F00 100%)",
     emoji: "🪂",
+  },
+  fragen99: {
+    title: "99 Fragen",
+    font: `"Bagel Fat One", "Bungee", system-ui, sans-serif`,
+    color: "#FF3D9A",
+    shadow: "#4A0028",
+    gradient: "linear-gradient(180deg, #FFD6E5 0%, #FF6FB1 50%, #C71D5E 100%)",
+    emoji: "💬",
   },
 };

@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
+import { MessageCircleQuestion } from "lucide-react";
 import imgPicili from "@/assets/game-picili.png";
 import imgPoker from "@/assets/game-poker.png";
 import imgNacheinander from "@/assets/game-nacheinander.png";
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Trinkspiel-Hub – Bierionär, Imposter, Picili & mehr" },
-      { name: "description", content: "Wähle ein Trinkspiel: Bierionär, Imposter, Picili, Poker & mehr." },
+      { name: "description", content: "Wähle ein Trinkspiel: Bierionär, Imposter, Picili, 99 Fragen, Poker & mehr." },
       { property: "og:title", content: "Trinkspiel-Hub" },
       { property: "og:description", content: "Lustige Trinkspiele für deinen Abend." },
     ],
@@ -21,7 +22,14 @@ export const Route = createFileRoute("/")({
   component: Hub,
 });
 
-const games: { key: GameKey; to: string; desc: string; img: string; gradient: string }[] = [
+type GameCard = {
+  key: GameKey;
+  to: string;
+  desc: string;
+  gradient: string;
+} & ({ img: string; iconOnly?: false } | { img?: undefined; iconOnly: true });
+
+const games: GameCard[] = [
   {
     key: "quiz",
     to: "/quiz",
@@ -51,6 +59,13 @@ const games: { key: GameKey; to: string; desc: string; img: string; gradient: st
     gradient: "from-purple-400/60 via-pink-300/30 to-transparent",
   },
   {
+    key: "fragen99",
+    to: "/fragen99",
+    desc: "99 Fragen, eine Runde. Wahrheit, Action oder Hot & Spicy – wer nicht antwortet, der trinkt.",
+    iconOnly: true,
+    gradient: "from-rose-400/70 via-pink-300/40 to-amber-200/20",
+  },
+  {
     key: "poker",
     to: "/poker",
     desc: "Runout-Gerät als Board, jeder Spieler am eigenen Handy.",
@@ -65,6 +80,43 @@ const games: { key: GameKey; to: string; desc: string; img: string; gradient: st
     gradient: "from-orange-400/60 via-red-300/30 to-transparent",
   },
 ];
+
+function Fragen99CardArt() {
+  return (
+    <div className="relative w-full h-full bg-gradient-to-br from-rose-500 via-pink-500 to-amber-400 flex items-center justify-center">
+      {/* decorative giant question marks */}
+      <span
+        className="absolute -left-3 -top-2 text-[140px] leading-none font-black text-white/15 select-none"
+        style={{ fontFamily: '"Bagel Fat One", system-ui' }}
+      >
+        ?
+      </span>
+      <span
+        className="absolute right-1 bottom-0 text-[110px] leading-none font-black text-white/20 select-none"
+        style={{ fontFamily: '"Bagel Fat One", system-ui', transform: "rotate(12deg)" }}
+      >
+        ?
+      </span>
+      <span
+        className="absolute right-8 -top-4 text-[80px] leading-none font-black text-white/10 select-none"
+        style={{ fontFamily: '"Bagel Fat One", system-ui', transform: "rotate(-18deg)" }}
+      >
+        !
+      </span>
+
+      {/* the big "99" */}
+      <div className="relative flex items-center gap-2">
+        <MessageCircleQuestion className="w-12 h-12 text-white drop-shadow-lg" strokeWidth={2.4} />
+        <span
+          className="text-[88px] leading-none font-black text-white drop-shadow-[0_6px_0_rgba(74,0,40,0.55)]"
+          style={{ fontFamily: '"Bagel Fat One", system-ui' }}
+        >
+          99
+        </span>
+      </div>
+    </div>
+  );
+}
 
 function Hub() {
   return (
@@ -82,16 +134,20 @@ function Hub() {
         {games.map((g) => {
           const s = GAME_STYLES[g.key];
           return (
-            <Link key={g.to} to={g.to}>
+            <Link key={g.to} to={g.to} data-testid={`hub-card-${g.key}`}>
               <Card className="group relative overflow-hidden p-0 bg-card/90 backdrop-blur border-2 border-border/60 shadow-[var(--shadow-pop)] hover:scale-[1.03] hover:-translate-y-1 active:scale-[0.98] transition-all cursor-pointer h-full rounded-3xl">
                 <div className="relative aspect-[16/9] overflow-hidden bg-white">
                   <div className={`absolute inset-0 bg-gradient-to-br ${g.gradient} pointer-events-none z-10`} />
-                  <img
-                    src={g.img}
-                    alt={s.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
+                  {g.iconOnly ? (
+                    <Fragen99CardArt />
+                  ) : (
+                    <img
+                      src={g.img}
+                      alt={s.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                  )}
                 </div>
                 <div className="relative p-5">
                   <h2
