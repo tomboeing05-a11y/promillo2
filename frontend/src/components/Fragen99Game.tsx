@@ -20,6 +20,8 @@ import {
   FRAGEN99_LIMIT,
   pickQuestion,
   sipsForQuestion,
+  getTierForQuestion,
+  SIPS_TIERS,
   type Fragen99Category,
   type Fragen99Card,
 } from "@/lib/fragen99-questions";
@@ -145,13 +147,25 @@ export function Fragen99Game() {
   if (phase === "setup") {
     return (
       <Card className="p-6 bg-card/90 backdrop-blur space-y-6 animate-scale-in" data-testid="fragen99-setup-card">
-        <div className="text-center space-y-1">
+        <div className="text-center space-y-2">
           <p className="text-sm text-muted-foreground">
             Karte vorlesen → Handy an die Person geben, zu der's am besten passt.
           </p>
-          <p className="text-xs text-muted-foreground">
-            Wer das Handy bekommt, <strong>trinkt 1 Schluck</strong>. Jede 10. Frage = <strong>doppelter Schluck</strong>! 🍻
-          </p>
+          <div className="text-xs text-muted-foreground">
+            Wer das Handy bekommt, trinkt – und je länger gespielt wird, desto härter wird's:
+          </div>
+          <div className="grid grid-cols-5 gap-1 text-[10px] pt-1">
+            {SIPS_TIERS.map((t) => (
+              <div
+                key={t.level}
+                className="rounded-md border bg-muted/30 p-1.5 text-center"
+                data-testid={`fragen99-tier-${t.level}`}
+              >
+                <div className="font-bold text-foreground">{t.sips} 🍻</div>
+                <div className="opacity-70">{t.min}–{t.max}</div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div>
@@ -234,6 +248,7 @@ export function Fragen99Game() {
   if (phase === "handover" && pendingIdx != null) {
     const target = players[pendingIdx];
     const sipsToDrink = current ? sipsForQuestion(current.index) : 1;
+    const tier = current ? getTierForQuestion(current.index) : SIPS_TIERS[0];
     const totalSips = sips[pendingIdx] ?? 0;
     return (
       <Card
@@ -259,11 +274,12 @@ export function Fragen99Game() {
           <div className="text-sm uppercase tracking-widest opacity-90">
             {sipsToDrink === 1 ? "Schluck" : "Schlücke"} für dich
           </div>
-          {sipsToDrink > 1 && (
-            <Badge className="bg-amber-300 text-amber-950 border-0 mt-1">
-              <Sparkles className="w-3 h-3 mr-1" /> Doppelter Schluck-Bonus!
-            </Badge>
-          )}
+          <Badge
+            className="bg-white/90 text-rose-700 border-0 mt-1 font-semibold"
+            data-testid="fragen99-handover-tier"
+          >
+            <Sparkles className="w-3 h-3 mr-1" /> Level {tier.level}: {tier.label}
+          </Badge>
           {totalSips > sipsToDrink && (
             <p className="text-xs opacity-80 pt-1">
               Insgesamt schon: <strong>{totalSips}</strong> Schlücke
@@ -350,6 +366,8 @@ export function Fragen99Game() {
   const reader = players[holderIdx];
   const c = current;
   const catBadge = c ? CAT_BADGE[c.cat] : null;
+  const tier = c ? getTierForQuestion(c.index) : SIPS_TIERS[0];
+  const sipsAtStake = c ? sipsForQuestion(c.index) : 1;
   const otherPlayers = players
     .map((name, i) => ({ name, idx: i }))
     .filter((p) => p.idx !== holderIdx);
@@ -399,9 +417,18 @@ export function Fragen99Game() {
 
       {/* Pass-the-phone selection */}
       <div className="space-y-2">
-        <p className="text-xs uppercase tracking-widest text-muted-foreground text-center">
-          Gib das Handy an die Person, zu der es am besten passt:
+        <p className="text-xs uppercase tracking-widest text-muted-foreground text-center flex items-center justify-center gap-2">
+          <span>Gib das Handy an die Person, zu der es am besten passt:</span>
         </p>
+        <div className="flex justify-center">
+          <Badge
+            variant="secondary"
+            className="text-xs gap-1 bg-rose-500/15 text-rose-700 border-rose-500/30"
+            data-testid="fragen99-stake-badge"
+          >
+            <Beer className="w-3 h-3" /> {sipsAtStake} {sipsAtStake === 1 ? "Schluck" : "Schlücke"} · Level {tier.level} {tier.label}
+          </Badge>
+        </div>
         <div className="grid grid-cols-2 gap-2" data-testid="fragen99-pass-grid">
           {otherPlayers.map((p) => {
             const playerSips = sips[p.idx] ?? 0;
